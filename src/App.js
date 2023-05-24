@@ -41,6 +41,14 @@ const Card = styled.div`
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: ${({ shinePosition }) =>
+      `radial-gradient(circle at ${shinePosition.x}px ${shinePosition.y}px, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 40%)`};
+  }
 `;
 
 const CoverImage = styled.img`
@@ -143,6 +151,7 @@ function App() {
 
   // Declare gradient angle state
   const [gradientAngle, setGradientAngle] = useState(0);
+  const [shinePosition, setShinePosition] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (event) => {
     const rect = cardRef.current.getBoundingClientRect();
@@ -156,6 +165,12 @@ function App() {
 
     setRotateX(-rotateX);
     setRotateY(rotateY);
+
+    const angle = Math.atan2(y, x) * (180 / Math.PI);
+    setGradientAngle(angle);
+    const shineX = event.clientX - rect.left;
+    const shineY = event.clientY - rect.top;
+    setShinePosition({ x: shineX, y: shineY });
   };
 
   const handleMouseEnter = () => setScale(1.05); // Enlarge the card
@@ -174,6 +189,7 @@ function App() {
         rotateY={rotateY}
         scale={scale}
         gradientAngle={gradientAngle}
+        shinePosition={shinePosition}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onMouseEnter={handleMouseEnter}
