@@ -8,9 +8,12 @@ import avatarImage from "./kit-avatar.png";
 import backgroundImage from "./card-background.jpg";
 import { createGlobalStyle } from "styled-components";
 import { makeStyles } from "@material-ui/core/styles";
+import { useState, useRef } from "react";
 
 // Styled components
+// Styled components
 const Card = styled.div`
+  position: relative;
   max-width: 360px;
   margin: 20px auto;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
@@ -19,10 +22,25 @@ const Card = styled.div`
   background: rgba(0, 0, 0, 0.6);
   box-shadow: 0px 30px 60px rgba(0, 0, 0, 0.1), 0px 30px 60px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10px);
-  /* Note: backdrop-filter has minimal browser support */
-
-  border-radius: 10px; /* New dark mode background color */
+  border-radius: 10px;
   padding: 20px;
+  transition: transform 0.1s ease-out;
+  transform: ${(props) =>
+    `perspective(600px) rotateX(${props.rotateX}deg) rotateY(${props.rotateY}deg) scale(${props.scale})`};
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: ${({ gradientAngle }) =>
+      `linear-gradient(${gradientAngle}deg, rgba(255,255,255, 0.1) 0%, rgba(255,255,255, 0.7) 50%, rgba(0, 0, 0, 0.5) 100%)`};
+    border-radius: 10px;
+    padding: 1px;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
 `;
 
 const CoverImage = styled.img`
@@ -68,7 +86,22 @@ const Author = styled.div`
 `;
 
 const AvatarStyled = styled(Avatar)`
+  position: relative;
   margin-right: 10px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: ${({ gradientAngle }) =>
+      `linear-gradient(${gradientAngle}deg, rgba(255,255,255, 0.1) 0%, rgba(255,255,255, 0.7) 50%, rgba(0, 0, 0, 0.5) 100%)`};
+    border-radius: 50%;
+    padding: 1px;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
 `;
 
 const AuthorName = styled.p`
@@ -101,10 +134,50 @@ const useStyles = makeStyles((theme) => ({
 function App() {
   const classes = useStyles();
 
+  // Declare rotation states
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  // Declare scale state
+  const [scale, setScale] = useState(1);
+  const cardRef = useRef();
+
+  // Declare gradient angle state
+  const [gradientAngle, setGradientAngle] = useState(0);
+
+  const handleMouseMove = (event) => {
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left - rect.width / 2; //x position within the element.
+    const y = event.clientY - rect.top - rect.height / 2; //y position within the element.
+    const height = rect.height;
+    const width = rect.width;
+
+    const rotateX = (y / height) * 20 - 10;
+    const rotateY = (x / width) * 20 - 10;
+
+    setRotateX(-rotateX);
+    setRotateY(rotateY);
+  };
+
+  const handleMouseEnter = () => setScale(1.05); // Enlarge the card
+  const handleMouseLeave = () => {
+    setScale(1); // Reset the scale and rotation
+    setRotateX(0);
+    setRotateY(0);
+  };
+
   return (
     <>
       <GlobalStyle />
-      <Card>
+      <Card
+        ref={cardRef}
+        rotateX={rotateX}
+        rotateY={rotateY}
+        scale={scale}
+        gradientAngle={gradientAngle}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onMouseEnter={handleMouseEnter}
+      >
         <CoverImage src={coverImage} alt="Cover" />
         <CardContent>
           <Title>Build beautiful apps with GPT4 and MidJourney</Title>
@@ -117,7 +190,7 @@ function App() {
           </Text>
           <Divider />
           <Author>
-            <AvatarStyled src={avatarImage} />
+            <AvatarStyled src={avatarImage} gradientAngle={gradientAngle} />
             <AuthorName>Kitwana Akil</AuthorName>
           </Author>
         </CardContent>
